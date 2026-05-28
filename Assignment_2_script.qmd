@@ -7,12 +7,12 @@ editor: visual
 ---
 
 ```{r}
-install.packages("dataRetrieval")
 library(dataRetrieval)
 library(tidyverse)
 library(here)
-install.packages("usethis")
 library(usethis)
+library(lubridate)
+library(broom)
 ```
 
 Load in data from NWIS server and save to CSV
@@ -39,7 +39,8 @@ Load data directly from repository
 tempdata <- read.csv(here("tempdata.csv"))
 ```
 
-Plot data & Calculate Summary Statistics
+**Plot data & Calculate Summary Statistics**
+
 ```{r}
 # check by plotting
 ggplot(tempdata, aes(x=Date, y=temp_C, color=site_no)) +
@@ -59,7 +60,8 @@ summary_table <- tempdata |>
 write.csv(summary_table, here("site_temp_summary_table.csv"))
 ```
 
-Trends in Water Temperature for the month of August
+*Trends in Water Temperature for the month of August*
+
 ```{r}
 # filter for August temperatures
 aug_data <- subset(temp_data, month == "Aug")
@@ -71,11 +73,10 @@ summary(aug_model)
 
 The slope for first site is 0.12975, showing a slight positive trend in water temperature.
 
-Site 14211010 has a slope that is 0.04627 greater than the first site, but the p-value is
-greater than 0.05, meaning that this result is not statistically significant.
-Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.  
+Site 14211010 has a slope that is 0.04627 greater than the first site, but the p-value is greater than 0.05, meaning that this result is not statistically significant. Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.
 
-Trends in Water Temperature for the month of February
+*Trends in Water Temperature for the month of February*
+
 ```{r}
 # filter for February temperatures
 feb_data <- subset(temp_data, month == "Feb")
@@ -88,5 +89,50 @@ summary(feb_model)
 
 The slope for first site is -0.064277, showing a slight negative trend in water temperature over time in the month of February.
 
-Site 14211010 has a slope that is 0.019204 greater than the first site, and Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.However, the p-value is
-greater than 0.05 for both of these estimates, meaning that these results are not statistically significant.
+Site 14211010 has a slope that is 0.019204 greater than the first site, and Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.However, the p-value is greater than 0.05 for both of these estimates, meaning that these results are not statistically significant.
+
+**Plot Combined Analysis**
+
+```{r}
+# Load saved data from repository
+tempdata <- read.csv(here("tempdata.csv"))
+
+# Clean date variables after loading from CSV
+tempdata <- tempdata |>
+  mutate(
+    Date = as.Date(Date),
+    site_no = as.factor(site_no),
+    month = month(Date, label = TRUE, abbr = TRUE),
+    year = year(Date)
+  )
+
+# Keep only the two months analyzed
+monthly_data <- tempdata |>
+  filter(month %in% c("Feb", "Aug"))
+
+# Calculate annual average temperature for each month and site
+monthly_summary <- monthly_data |>
+  group_by(month, year, site_no) |>
+  summarize(
+    mean_temp_C = mean(temp_C, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Summary plot combining February and August trends
+ggplot(monthly_summary, aes(x = year, y = mean_temp_C, color = site_no)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 1) +
+  facet_wrap(~ month, scales = "free_y") +
+  labs(
+    title = "February and August Stream Temperature Trends by Site",
+    subtitle = "Annual mean water temperature from 2010–2023 at Willamette River sites",
+    x = "Year",
+    y = "Mean Water Temperature (°C)",
+    color = "Site Number"
+  ) +
+  theme_minimal()
+```
+
+**Combined Analysis Conclusions**
+
+The combined monthly analysis suggests that stream temperature trends differ by season. August temperatures show a slight positive trend over time, indicating that late-summer water temperatures may be increasing across the Willamette River sites. This pattern is meaningful because August is typically a warmer month, so even small increases in stream temperature could matter for aquatic ecosystems and water-quality management. In contrast, February temperatures show a slight negative trend or relatively weak change over time, suggesting that winter stream temperatures are not warming in the same way as summer temperatures. The differences between sites appear relatively small, and several site-specific interaction terms were not statistically significant, meaning there is limited evidence that the sites are experiencing strongly different trends. Overall, the most important management takeaway is that warming appears more evident in August than in February, which suggests that late-summer stream conditions may deserve closer monitoring.
