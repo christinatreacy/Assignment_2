@@ -74,3 +74,19 @@ The slope for first site is 0.12975, showing a slight positive trend in water te
 Site 14211010 has a slope that is 0.04627 greater than the first site, but the p-value is
 greater than 0.05, meaning that this result is not statistically significant.
 Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.  
+
+Trends in Water Temperature for the month of February
+```{r}
+# filter for February temperatures
+feb_data <- subset(temp_data, month == "Feb")
+
+# fit a GLM model to see if there is a trend in Feburary temperatures over time, separated by site
+feb_model <- glm(temp_C ~ year*site_no, data = feb_data)
+summary(feb_model)
+
+```
+
+The slope for first site is -0.064277, showing a slight negative trend in water temperature over time in the month of February.
+
+Site 14211010 has a slope that is 0.019204 greater than the first site, and Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.However, the p-value is
+greater than 0.05 for both of these estimates, meaning that these results are not statistically significant.
