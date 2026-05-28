@@ -11,6 +11,8 @@ install.packages("dataRetrieval")
 library(dataRetrieval)
 library(tidyverse)
 library(here)
+install.packages("usethis")
+library(usethis)
 ```
 
 Load in data from NWIS server and save to CSV
@@ -38,7 +40,6 @@ tempdata <- read.csv(here("tempdata.csv"))
 ```
 
 Plot data & Calculate Summary Statistics
-
 ```{r}
 # check by plotting
 ggplot(tempdata, aes(x=Date, y=temp_C, color=site_no)) +
@@ -57,3 +58,19 @@ summary_table <- tempdata |>
             st_dev=sd(temp_C)) 
 write.csv(summary_table, here("site_temp_summary_table.csv"))
 ```
+
+Trends in Water Temperature for the month of August
+```{r}
+# filter for August temperatures
+aug_data <- subset(temp_data, month == "Aug")
+
+# fit a GLM model to see if there is a trend in August temperatures over time, separated by site
+aug_model <- glm(temp_C ~ year*site_no, data = aug_data)
+summary(aug_model)
+```
+
+The slope for first site is 0.12975, showing a slight positive trend in water temperature.
+
+Site 14211010 has a slope that is 0.04627 greater than the first site, but the p-value is
+greater than 0.05, meaning that this result is not statistically significant.
+Site 14211720 has a slope that is 0.01619 greater than the first site. Both of these results demonstrate relatively small differences in trends between sites.  
